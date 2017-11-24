@@ -1,6 +1,6 @@
 using System;
 
-namespace OpenSource
+namespace Dzse.Patterns
 {
 	public class GenericResult
 	{
