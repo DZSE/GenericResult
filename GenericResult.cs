@@ -1,6 +1,6 @@
 using System;
 
-namespace Dzse.Patterns
+namespace Dzse.Common
 {
 	public class GenericResult
 	{
