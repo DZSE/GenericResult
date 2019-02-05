@@ -1,48 +1,74 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Dzse.Common
 {
 	public class GenericResult
-	{
-		public GenericResult(string errorMessage)
-		{
-			Succeeded = errorMessage == null;
-			ErrorMessage = errorMessage;
-		}
+    {
+        public GenericResult(string errorMessage)
+        {
+            Succeeded = errorMessage == null;
+            ErrorMessage = errorMessage;
+            ExceptionObject = null;
+        }
 
-		public GenericResult()
-		{
-			Succeeded = true;
-		}
+        public GenericResult(Exception exception)
+            : this(exception.Message)
+        {
+            ExceptionObject = exception;
+        }
 
-		public string ErrorMessage { get; }
+        public GenericResult()
+        {
+            Succeeded = true;
+        }
 
-		public bool Succeeded { get; }
+        [JsonProperty("errorMessage")]
+        public string ErrorMessage { get; set; }
 
-		public bool HasError => !Succeeded;
-	}
+        [JsonIgnore]
+        public Exception ExceptionObject { get; set; }
 
-	public class GenericResult<T> : GenericResult
-	{
-		public GenericResult(string errorMessage)
-			: base(errorMessage)
-		{
-		}
+        [JsonProperty("succeeded")]
+        public bool Succeeded { get; private set; }
 
-		public GenericResult(T value, string errorMessage)
-			: base(errorMessage)
-		{
-			if (value != null && !string.IsNullOrEmpty(errorMessage))
-				throw new InvalidOperationException("When the error message is provided, value must be null.");
+        [JsonIgnore]
+        public bool HasError => !Succeeded;
 
-			Value = value;
-		}
+        [JsonIgnore]
+        public static GenericResult Success => new GenericResult();
+    }
 
-		public GenericResult(T value)
-			: this(value, null)
-		{
-		}
+    public class GenericResult<T> : GenericResult
+    {
+        public GenericResult()
+        {
+        }
 
-		public T Value { get; set; }
-	}
+        public GenericResult(string errorMessage)
+            : base(errorMessage)
+        {
+        }
+
+        public GenericResult(Exception exception)
+            : base(exception)
+        {
+        }
+
+        public GenericResult(T value, string errorMessage = null)
+            : base(errorMessage)
+        {
+
+            if (value != null && !string.IsNullOrEmpty(errorMessage))
+            {
+                throw new InvalidOperationException(
+                    "When the error message is provided, value must be null.");
+            }
+
+            Value = value;
+        }
+
+        [JsonProperty("value")]
+        public T Value { get; set; }
+    }
 }
