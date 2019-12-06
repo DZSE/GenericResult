@@ -1,19 +1,27 @@
+// ReSharper disable MemberCanBeProtected.Global
+#pragma warning disable RECS0017
+#pragma warning disable 0108
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using Brainporters.Common.Extensions;
 
-namespace Dzse.Common
+
+namespace DZSE.Common
 {
-	public class GenericResult
+    public class GenericResult
     {
         public GenericResult(string errorMessage)
         {
-            Succeeded = errorMessage == null;
+            if (string.IsNullOrWhiteSpace(errorMessage))
+                throw new ArgumentNullException(nameof(errorMessage));
+
+            Succeeded = false;
             ErrorMessage = errorMessage;
             ExceptionObject = null;
         }
 
         public GenericResult(Exception exception)
-            : this(exception.Message)
+            : this(exception.ToFullErrorMessage())
         {
             ExceptionObject = exception;
         }
@@ -23,13 +31,13 @@ namespace Dzse.Common
             Succeeded = true;
         }
 
-        [JsonProperty("errorMessage")]
-        public string ErrorMessage { get; set; }
+        [JsonPropertyName("errorMessage")]
+        public string ErrorMessage { get; private set; }
 
         [JsonIgnore]
-        public Exception ExceptionObject { get; set; }
+        public Exception ExceptionObject { get; private set; }
 
-        [JsonProperty("succeeded")]
+        [JsonPropertyName("succeeded")]
         public bool Succeeded { get; private set; }
 
         [JsonIgnore]
@@ -37,6 +45,16 @@ namespace Dzse.Common
 
         [JsonIgnore]
         public static GenericResult Success => new GenericResult();
+
+        public static GenericResult Error(Exception exception)
+        {
+            return new GenericResult(exception);
+        }
+
+        public static GenericResult Error(string message)
+        {
+            return new GenericResult(message);
+        }
     }
 
     public class GenericResult<T> : GenericResult
@@ -55,20 +73,22 @@ namespace Dzse.Common
         {
         }
 
-        public GenericResult(T value, string errorMessage = null)
-            : base(errorMessage)
+        public GenericResult(T value)
         {
-
-            if (value != null && !string.IsNullOrEmpty(errorMessage))
-            {
-                throw new InvalidOperationException(
-                    "When the error message is provided, value must be null.");
-            }
-
             Value = value;
         }
 
-        [JsonProperty("value")]
-        public T Value { get; set; }
+        [JsonPropertyName("value")]
+        public T Value { get; private set; }
+
+        public new static GenericResult<T> Error(string message)
+        {
+            return new GenericResult<T>(message);
+        }
+
+        public static GenericResult<T> Success(T value)
+        {
+            return new GenericResult<T>(value);
+        }
     }
 }
